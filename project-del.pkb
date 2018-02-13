@@ -19,10 +19,11 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             ELSE
                 IF doBackup = 'Y' or doBackup = 'y' THEN
                     DBMS_OUTPUT.PUT_LINE('DO BACKUP and DELETE');
-                    backupTable(l_bkpTableName, p_tableName);
+                    backupTableAll(l_bkpTableName, p_tableName);
                     deleteTableAll(p_tableName);
                 ELSIF doBackup = 'N' or doBackup = 'n' THEN
                     DBMS_OUTPUT.PUT_LINE('JUST DELETE');
+                    deleteTableAll(p_tableName);
                 END IF;
             END IF;
         END IF;
@@ -48,16 +49,18 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             ELSE
                 IF doBackup = 'Y' or doBackup = 'y' THEN
                     DBMS_OUTPUT.PUT_LINE('DO BACKUP and DELETE');
-                    backupTable(l_bkpTableName, p_tableName);
+                    backupTableAll(l_bkpTableName, p_tableName);
+                    deleteTableWhere(p_tableName, whereClause);
                 ELSIF doBackup = 'N' or doBackup = 'n' THEN
                     DBMS_OUTPUT.PUT_LINE('JUST DELETE');
+                    deleteTableWhere(p_tableName, whereClause);
                 END IF;
             END IF;
         END IF;
         COMMIT;
     END validateTable;
 
-    PROCEDURE backupTable(p_tableName VARCHAR2, p_sourceTable VARCHAR2) IS
+    PROCEDURE backupTableAll(p_tableName VARCHAR2, p_sourceTable VARCHAR2) IS
         l_stmt1 VARCHAR2(200);
         l_count1 number;
     BEGIN
@@ -74,7 +77,7 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             l_stmt1 := 'CREATE TABLE '||p_tableName||' AS SELECT * FROM '||p_sourceTable;
             EXECUTE IMMEDIATE l_stmt1;
         END IF;
-    END backupTable;
+    END backupTableAll;
 
     PROCEDURE deleteTableAll(tableName VARCHAR2) IS
         l_stmt1 VARCHAR2(200);
@@ -82,6 +85,14 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
         l_stmt1 := 'DELETE FROM '||tableName;
         EXECUTE IMMEDIATE l_stmt1;
     END deleteTableAll;
+
+    PROCEDURE deleteTableWhere(tableName VARCHAR2, whereClause VARCHAR2) IS
+        l_stmt1 VARCHAR2(200);
+    BEGIN
+        l_stmt1 := 'DELETE FROM '||tableName||' WHERE 1 = 1 AND '||whereClause;
+        DBMS_OUTPUT.PUT_LINE(l_stmt1);
+        EXECUTE IMMEDIATE l_stmt1;
+    END deleteTableWhere;
 
 
 END project_del;
