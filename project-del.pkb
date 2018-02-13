@@ -20,7 +20,7 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
                 IF doBackup = 'Y' or doBackup = 'y' THEN
                     DBMS_OUTPUT.PUT_LINE('DO BACKUP and DELETE');
                     backupTable(l_bkpTableName, p_tableName);
-                    deleteTableAll();
+                    deleteTableAll(p_tableName);
                 ELSIF doBackup = 'N' or doBackup = 'n' THEN
                     DBMS_OUTPUT.PUT_LINE('JUST DELETE');
                 END IF;
@@ -75,6 +75,13 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             EXECUTE IMMEDIATE l_stmt1;
         END IF;
     END backupTable;
+
+    PROCEDURE deleteTableAll(tableName VARCHAR2) IS
+        l_stmt1 VARCHAR2(200);
+    BEGIN
+        l_stmt1 := 'DELETE FROM '||tableName;
+        EXECUTE IMMEDIATE l_stmt1;
+    END deleteTableAll;
 
 
 END project_del;
