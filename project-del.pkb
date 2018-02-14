@@ -24,6 +24,8 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
                 ELSIF doBackup = 'N' or doBackup = 'n' THEN
                     DBMS_OUTPUT.PUT_LINE('JUST DELETE');
                     deleteTableAll(p_tableName);
+                ELSIF doBackup IN ('b', 'B') THEN
+                    backupTableAll(l_bkpTableName, p_tableName);
                 END IF;
             END IF;
         END IF;
@@ -49,11 +51,13 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             ELSE
                 IF doBackup = 'Y' or doBackup = 'y' THEN
                     DBMS_OUTPUT.PUT_LINE('DO BACKUP and DELETE');
-                    backupTableAll(l_bkpTableName, p_tableName);
+                    backupTableWhere(l_bkpTableName, whereClause, p_tableName);
                     deleteTableWhere(p_tableName, whereClause);
                 ELSIF doBackup = 'N' or doBackup = 'n' THEN
                     DBMS_OUTPUT.PUT_LINE('JUST DELETE');
                     deleteTableWhere(p_tableName, whereClause);
+                ELSIF doBackup IN ('b', 'B') THEN
+                    backupTableWhere(l_bkpTableName, whereClause, p_tableName);
                 END IF;
             END IF;
         END IF;
@@ -77,7 +81,28 @@ CREATE OR REPLACE PACKAGE BODY project_del AS
             l_stmt1 := 'CREATE TABLE '||p_tableName||' AS SELECT * FROM '||p_sourceTable;
             EXECUTE IMMEDIATE l_stmt1;
         END IF;
+        COMMIT;
     END backupTableAll;
+
+    PROCEDURE backupTableWhere(p_tableName VARCHAR2, whereClause VARCHAR2, p_sourceTable VARCHAR2) IS
+        l_stmt1 VARCHAR2(200);
+        l_count1 number;
+    BEGIN
+        SELECT COUNT(*) INTO l_count1 FROM tab WHERE tname = UPPER(p_tableName);
+        IF l_count1 = 0 THEN
+            DBMS_OUTPUT.PUT_LINE('CREATING BACKUP TABLE : '||p_tableName);
+            l_stmt1 := 'CREATE TABLE '||p_tableName||' AS SELECT * FROM '||p_sourceTable||' WHERE 1 = 1 AND '||whereClause;
+            --USE : grant create any table to allwyn
+            EXECUTE IMMEDIATE l_stmt1;
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('DROPPING AND CREATING BACKUP TABLE : '||p_tableName);
+            l_stmt1 := 'DROP TABLE '||p_tableName;
+            EXECUTE IMMEDIATE l_stmt1;
+            l_stmt1 := 'CREATE TABLE '||p_tableName||' AS SELECT * FROM '||p_sourceTable||' WHERE 1 = 1 AND '||whereClause;
+            EXECUTE IMMEDIATE l_stmt1;
+        END IF;
+        COMMIT;
+    END backupTableWhere;
 
     PROCEDURE deleteTableAll(tableName VARCHAR2) IS
         l_stmt1 VARCHAR2(200);
